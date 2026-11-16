@@ -16,7 +16,6 @@ TreeError tree_new_node(TreeNode** node_ptr, int n) {
     return TREE_OK;
 }
 
-// TODO: add more checks
 TreeError tree_attach(TreeNode* parent, TreeNode* child, TreeAttachMode mode) {
     assert(parent != NULL);
     assert(child != NULL);
@@ -28,7 +27,7 @@ TreeError tree_attach(TreeNode* parent, TreeNode* child, TreeAttachMode mode) {
             err = tree_attach(parent, child, TREE_ATTACH_LEFT);
             if (!err) return TREE_OK;
 
-            if (err == TREE_ERR_OCCUPIED) {
+            if (err == TREE_ERR_ATTACH) {
                 err = tree_attach(parent, child, TREE_ATTACH_RIGHT);
                 return err;
             } else {
@@ -36,8 +35,9 @@ TreeError tree_attach(TreeNode* parent, TreeNode* child, TreeAttachMode mode) {
             }
 
         case TREE_ATTACH_LEFT:
-            if (parent->left != NULL) return TREE_ERR_OCCUPIED;
-            if (child->parent != NULL) return TREE_ERR_OCCUPIED;
+            if (parent->left != NULL) return TREE_ERR_ATTACH;
+            if (child->parent != NULL) return TREE_ERR_ATTACH;
+            if (parent->right == child) return TREE_ERR_ATTACH;
 
             parent->left = child;
             child->parent = parent;
@@ -45,8 +45,9 @@ TreeError tree_attach(TreeNode* parent, TreeNode* child, TreeAttachMode mode) {
             return TREE_OK;
 
         case TREE_ATTACH_RIGHT:
-            if (parent->right != NULL) return TREE_ERR_OCCUPIED;
-            if (child->parent != NULL) return TREE_ERR_OCCUPIED;
+            if (parent->right != NULL) return TREE_ERR_ATTACH;
+            if (child->parent != NULL) return TREE_ERR_ATTACH;
+            if (parent->left == child) return TREE_ERR_ATTACH;
 
             parent->right = child;
             child->parent = parent;
@@ -56,6 +57,26 @@ TreeError tree_attach(TreeNode* parent, TreeNode* child, TreeAttachMode mode) {
         default:
             return TREE_ERR_INVALID_PARAM;
     }
+}
+
+TreeError tree_detach(TreeNode* parent, TreeNode* child) {
+    assert(parent != NULL);
+    assert(child != NULL);
+
+    if (child->parent != parent) {
+        return TREE_ERR_DETACH;
+    }
+    child->parent = NULL;
+
+    if (parent->left == child) {
+        parent->left = NULL;
+    } else if (parent->right == child) {
+        parent->right = NULL;
+    } else {
+        return TREE_ERR_DETACH;
+    }
+
+    return TREE_OK;
 }
 
 TreeError tree_dump(TreeNode* root, FILE* file) {

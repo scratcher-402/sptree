@@ -12,7 +12,8 @@ typedef struct TreeNode {
 typedef enum {
     TREE_OK = 0,
     TREE_ERR_ALLOC,
-    TREE_ERR_OCCUPIED,
+    TREE_ERR_ATTACH,
+    TREE_ERR_DETACH,
     TREE_ERR_INVALID_PARAM,
 } TreeError;
 
@@ -26,7 +27,7 @@ TreeError tree_new_node(TreeNode** node_ptr, int n);
 
 TreeError tree_attach(TreeNode* parent, TreeNode* child, TreeAttachMode mode);
 
-// TODO: detach
+TreeError tree_detach(TreeNode* parent, TreeNode* child);
 
 TreeError tree_dump(TreeNode* root, FILE* file);
 

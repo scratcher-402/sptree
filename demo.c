@@ -36,6 +36,13 @@ int main() {
     tree_dump(root, stdout);
     putchar('\n');
 
+    err = tree_detach(node1, node3);
+    handle_error(err);
+    tree_free(&node3);
+
+    tree_dump(root, stdout);
+    putchar('\n');
+
     tree_free(&root);
 
     return 0;
