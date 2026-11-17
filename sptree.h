@@ -28,8 +28,7 @@ TreeError tree_new_node(TreeNode** node_ptr, int n);
 
 TreeError tree_attach(TreeNode* parent, TreeNode* child, TreeAttachMode mode);
 
-// FIXME: zachem tut parent???
-TreeError tree_detach(TreeNode* parent, TreeNode* child);
+TreeError tree_detach(TreeNode* child);
 
 TreeError tree_dump(TreeNode* root, FILE* file);
 

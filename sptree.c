@@ -62,14 +62,14 @@ TreeError tree_attach(TreeNode* parent, TreeNode* child, TreeAttachMode mode) {
     }
 }
 
-TreeError tree_detach(TreeNode* parent, TreeNode* child) {
-    assert(parent != NULL);
+TreeError tree_detach(TreeNode* child) {
     assert(child != NULL);
 
-    if (child->parent != parent) {
+    if (child->parent == NULL) {
         return TREE_ERR_DETACH;
     }
-    child->parent = NULL;
+
+    TreeNode* parent = child->parent;
 
     if (parent->left == child) {
         parent->left = NULL;
@@ -78,6 +78,8 @@ TreeError tree_detach(TreeNode* parent, TreeNode* child) {
     } else {
         return TREE_ERR_DETACH;
     }
+
+    child->parent = NULL;
 
     return TREE_OK;
 }
@@ -200,7 +202,7 @@ void tree_free(TreeNode** node_ptr) {
     if (node == NULL) return;
 
     if (node->parent != NULL) {
-        tree_detach(node->parent, node);
+        tree_detach(node);
     }
 
     tree_free(&node->left);
