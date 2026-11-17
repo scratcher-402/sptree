@@ -45,5 +45,20 @@ int main() {
 
     tree_free(&root);
 
+    char buf[1024] = {0};
+    fgets((char*)&buf, 1023, stdin);
+    buf[1023] = '\0';
+
+    err = tree_parse(&root, (char*)buf);
+    if (err) {
+        puts("Parsing error");
+        return 1;
+    }
+
+    tree_dump(root, stdout);
+    putchar('\n');
+
+    tree_free(&root);
+
     return 0;
 }
