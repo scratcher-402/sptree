@@ -1,6 +1,12 @@
 #include <stdio.h>
 #include <stdlib.h>
+
+typedef int TreeElement_t;
+#define SPTREE_IMPLEMENTATION
 #include "sptree.h"
+
+TreeSerializer_t tree_element_serialize = tree_serialize_int;
+TreeDeserializer_t tree_element_deserialize = tree_deserialize_int;
 
 void handle_error(TreeError err) {
     if (err) {
@@ -11,7 +17,7 @@ void handle_error(TreeError err) {
 
 TreeNode* new_node(int n) {
     TreeNode* node;
-    TreeError err = tree_new_node(&node, n);
+    TreeError err = tree_new_node(&node, &n);
     handle_error(err);
     return node;
 }

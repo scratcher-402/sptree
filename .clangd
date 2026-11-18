@@ -1,0 +1,4 @@
+CompileFlags:
+    Add: [-DEDITOR]
+Diagnostics:
+  Suppress: misc-definitions-in-headers
