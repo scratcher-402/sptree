@@ -34,7 +34,7 @@ typedef enum {
 
 typedef int (*TreeSerializer_t)(TreeElement_t* el, FILE* file);
 typedef int (*TreeDeserializer_t)(const char** strp, TreeElement_t* el);
-typedef void (*NodeDestructor_t)(TreeNode* node);
+typedef void (*NodeDestructor_t)(TreeElement_t* el);
 
 extern TreeSerializer_t tree_element_serialize;
 extern TreeDeserializer_t tree_element_deserialize;
