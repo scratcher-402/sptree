@@ -1,0 +1,3 @@
+[submodule "lib/spdebug2"]
+	path = lib/spdebug2
+	url = https://github.com/scratcher-402/spdebug2.git

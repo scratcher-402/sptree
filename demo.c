@@ -3,6 +3,7 @@
 
 typedef int TreeElement_t;
 #define SPTREE_IMPLEMENTATION
+#define SPDEBUG_IMPLEMENTATION
 #include "sptree.h"
 
 TreeSerializer_t tree_element_serialize = tree_serialize_int;

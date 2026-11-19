@@ -6,6 +6,7 @@ typedef int TreeElement_t;
 #endif
 
 #include <stdio.h>
+#include "lib/spdebug2/spdebug.h"
 
 typedef struct TreeNode {
     struct TreeNode* parent;
@@ -33,6 +34,7 @@ typedef enum {
 
 typedef int (*TreeSerializer_t)(TreeElement_t* el, FILE* file);
 typedef int (*TreeDeserializer_t)(const char** strp, TreeElement_t* el);
+// TODO: add destructor
 
 extern TreeSerializer_t tree_element_serialize;
 extern TreeDeserializer_t tree_element_deserialize;
@@ -54,6 +56,8 @@ int tree_deserialize_int(const char** strp, int* num);
 
 #ifdef SPTREE_IMPLEMENTATION
 
+// TODO: add dot dump
+
 #include <assert.h>
 #include <stdlib.h>
 #include <string.h>
@@ -64,8 +68,10 @@ int tree_deserialize_int(const char** strp, int* num);
 TreeError tree_new_node(TreeNode** node_ptr, TreeElement_t* el) {
     assert(node_ptr != NULL);
 
-    TreeNode* node = calloc(1, sizeof(TreeNode));
+    TreeNode* node = (TreeNode*)calloc(1, sizeof(TreeNode));
     if (!node) {
+        $errno;
+        $err("[tree_new_node] Couldn't allocate new node");
         return TREE_ERR_ALLOC;
     }
 
@@ -79,9 +85,10 @@ TreeError tree_attach(TreeNode* parent, TreeNode* child, TreeAttachMode mode) {
     assert(parent != NULL);
     assert(child != NULL);
 
+    TreeError err = TREE_OK;
+
     switch (mode) {
         case TREE_ATTACH_AUTO:
-            TreeError err = TREE_OK;
 
             err = tree_attach(parent, child, TREE_ATTACH_LEFT);
             if (!err) return TREE_OK;
@@ -99,9 +106,9 @@ TreeError tree_attach(TreeNode* parent, TreeNode* child, TreeAttachMode mode) {
             if (parent->right == child) return TREE_ERR_ATTACH;
 
             parent->left = child;
-        child->parent = parent;
+            child->parent = parent;
 
-        return TREE_OK;
+            return TREE_OK;
 
         case TREE_ATTACH_RIGHT:
             if (parent->right != NULL) return TREE_ERR_ATTACH;
@@ -109,9 +116,9 @@ TreeError tree_attach(TreeNode* parent, TreeNode* child, TreeAttachMode mode) {
             if (parent->left == child) return TREE_ERR_ATTACH;
 
             parent->right = child;
-        child->parent = parent;
+            child->parent = parent;
 
-        return TREE_OK;
+            return TREE_OK;
 
         default:
             return TREE_ERR_INVALID_PARAM;
@@ -123,6 +130,7 @@ TreeError tree_detach(TreeNode* child) {
 
     if (child->parent == NULL) {
         return TREE_ERR_DETACH;
+        $err("[tree_detach] Node %p has no parent", child);
     }
 
     TreeNode* parent = child->parent;
@@ -132,7 +140,8 @@ TreeError tree_detach(TreeNode* child) {
     } else if (parent->right == child) {
         parent->right = NULL;
     } else {
-        return TREE_ERR_DETACH;
+        $fatal("[tree_detach] Could not find child pointer in parent node. Tree structure may be corrupted.", child);
+        abort();
     }
 
     child->parent = NULL;
@@ -188,8 +197,8 @@ static TreeError recursive_tree_parse(const char** strp, TreeNode** node_ptr, Tr
     }
 
     TreeElement_t el;
-    err = tree_element_deserialize(strp, &el);
-    if (err) return err;
+    int deser_err = tree_element_deserialize(strp, &el);
+    if (deser_err) return TREE_ERR_PARSE;
 
     TreeNode* curr_node = NULL;
     TreeNode* left = NULL;
@@ -201,8 +210,8 @@ static TreeError recursive_tree_parse(const char** strp, TreeNode** node_ptr, Tr
     if (**strp != '(') goto error;
     *strp += 1;
 
-    int deser_err = recursive_tree_parse(strp, &left, curr_node);
-    if (deser_err) goto error;
+    err = recursive_tree_parse(strp, &left, curr_node);
+    if (err) goto error;
 
     skip_spaces(strp);
     if (**strp != ',') goto error;
@@ -228,7 +237,7 @@ static TreeError recursive_tree_parse(const char** strp, TreeNode** node_ptr, Tr
     goto cleanup;
 
     cleanup:
-    fprintf(stderr, "[libsptree] parsing stopped at %s, error code %d\n", *strp, err);
+    $err("[libsptree] parsing stopped at %.20s..., error code %d", *strp, err);
     tree_free(&curr_node);
     tree_free(&left);
     tree_free(&right);
@@ -260,9 +269,13 @@ void tree_free(TreeNode** node_ptr) {
 
 int tree_serialize_int(int* num, FILE* file) {
     int result = fprintf(file, "%d", *num);
-    if (result == EOF) return TREE_ERR_WRITE;
+    if (result == EOF) {
+        $errno;
+        $err("[tree_serialize_int] Error while writing integer to file");
+        return debug_saved_errno;
+    }
 
-    return TREE_OK;
+    return 0;
 }
 
 int tree_deserialize_int(const char** strp, int* num) {
@@ -271,7 +284,10 @@ int tree_deserialize_int(const char** strp, int* num) {
     long long_num = strtol(*strp, &num_end, 10);
 
     if (*strp == num_end) return TREE_ERR_PARSE;
-    if (long_num > INT_MAX || long_num < INT_MIN) return TREE_ERR_PARSE;
+    if (long_num > INT_MAX || long_num < INT_MIN) {
+        $err("[tree_deserialize_int] Passed integer is too big");
+        return TREE_ERR_PARSE;
+    }
 
     *num = long_num;
     *strp = num_end;
