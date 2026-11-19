@@ -34,10 +34,11 @@ typedef enum {
 
 typedef int (*TreeSerializer_t)(TreeElement_t* el, FILE* file);
 typedef int (*TreeDeserializer_t)(const char** strp, TreeElement_t* el);
-// TODO: add destructor
+typedef void (*NodeDestructor_t)(TreeNode* node);
 
 extern TreeSerializer_t tree_element_serialize;
 extern TreeDeserializer_t tree_element_deserialize;
+extern NodeDestructor_t tree_element_destroy;
 
 TreeError tree_new_node(TreeNode** node_ptr, TreeElement_t* elem);
 
@@ -47,6 +48,8 @@ TreeError tree_detach(TreeNode* child);
 
 TreeError tree_dump(TreeNode* root, FILE* file);
 
+TreeError tree_dot_dump(TreeNode* node);
+
 TreeError tree_parse(TreeNode** root, const char* str);
 
 void tree_free(TreeNode** node_ptr);
@@ -55,8 +58,6 @@ int tree_serialize_int(int* num, FILE* file);
 int tree_deserialize_int(const char** strp, int* num);
 
 #ifdef SPTREE_IMPLEMENTATION
-
-// TODO: add dot dump
 
 #include <assert.h>
 #include <stdlib.h>
@@ -232,11 +233,11 @@ static TreeError recursive_tree_parse(const char** strp, TreeNode** node_ptr, Tr
     *node_ptr = curr_node;
     return TREE_OK;
 
-    error:
+error:
     err = TREE_ERR_PARSE;
     goto cleanup;
 
-    cleanup:
+cleanup:
     $err("[libsptree] parsing stopped at %.20s..., error code %d", *strp, err);
     tree_free(&curr_node);
     tree_free(&left);
@@ -263,8 +264,60 @@ void tree_free(TreeNode** node_ptr) {
     tree_free(&node->left);
     tree_free(&node->right);
 
+    if (tree_element_destroy) tree_element_destroy(node);
+
     free(node);
     *node_ptr = NULL;
+}
+
+static TreeError recursive_tree_dot_dump(TreeNode* node, FILE* file) {
+    // Define node
+    fprintf(file, "Node%p [shape=box, style=rounded, label=\"", node);
+    tree_element_serialize(&node->el, file);
+    fprintf(file, "\"];\n");
+
+    TreeError err = TREE_OK;
+
+    if (node->left) {
+        fprintf(file, "Node%p -> Node%p;\n", node, node->left);
+        err = recursive_tree_dot_dump(node->left, file);
+        if (err) return err;
+    }
+
+    if (node->right) {
+        fprintf(file, "Node%p -> Node%p;\n", node, node->right);
+        err = recursive_tree_dot_dump(node->right, file);
+        if (err) return err;
+    }
+
+    return TREE_OK;
+}
+
+TreeError tree_dot_dump(TreeNode* node) {
+    assert(node != NULL);
+
+    TreeNode* root = node;
+    while (root->parent != NULL) root = root->parent;
+
+    FILE* file = fopen("tree_dump.dot", "w");
+    if (!file) {
+        $errno;
+        $err("[tree_dot_dump] Error while opening file");
+        return TREE_ERR_WRITE;
+    }
+
+    fprintf(file,   "digraph Tree {\n"
+                    "nodesep=0.5;\n"
+    );
+
+    TreeError err = recursive_tree_dot_dump(root, file);
+    if (err) return err;
+
+    fprintf(file, "};\n");
+
+    fclose(file);
+
+    return TREE_OK;
 }
 
 int tree_serialize_int(int* num, FILE* file) {
