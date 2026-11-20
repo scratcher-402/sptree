@@ -32,12 +32,12 @@ typedef enum {
     TREE_ATTACH_RIGHT,
 } TreeAttachMode;
 
-typedef int (*TreeSerializer_t)(TreeElement_t* el, FILE* file);
-typedef int (*TreeDeserializer_t)(const char** strp, TreeElement_t* el);
+typedef int (*NodeSerializer_t)(TreeElement_t* el, FILE* file);
+typedef int (*NodeDeserializer_t)(const char** strp, TreeElement_t* el);
 typedef void (*NodeDestructor_t)(TreeElement_t* el);
 
-extern TreeSerializer_t tree_element_serialize;
-extern TreeDeserializer_t tree_element_deserialize;
+extern NodeSerializer_t tree_element_serialize;
+extern NodeDeserializer_t tree_element_deserialize;
 extern NodeDestructor_t tree_element_destroy;
 
 TreeError tree_new_node(TreeNode** node_ptr, TreeElement_t* elem);

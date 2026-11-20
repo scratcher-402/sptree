@@ -6,8 +6,8 @@ typedef int TreeElement_t;
 #define SPDEBUG_IMPLEMENTATION
 #include "sptree.h"
 
-TreeSerializer_t tree_element_serialize = tree_serialize_int;
-TreeDeserializer_t tree_element_deserialize = tree_deserialize_int;
+NodeSerializer_t tree_element_serialize = tree_serialize_int;
+NodeDeserializer_t tree_element_deserialize = tree_deserialize_int;
 NodeDestructor_t tree_element_destroy = NULL;
 
 void handle_error(TreeError err) {
