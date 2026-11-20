@@ -264,7 +264,7 @@ void tree_free(TreeNode** node_ptr) {
     tree_free(&node->left);
     tree_free(&node->right);
 
-    if (tree_element_destroy) tree_element_destroy(node);
+    if (tree_element_destroy) tree_element_destroy(&node->el);
 
     free(node);
     *node_ptr = NULL;
