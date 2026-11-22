@@ -35,10 +35,12 @@ typedef enum {
 typedef int (*NodeSerializer_t)(TreeElement_t* el, FILE* file);
 typedef int (*NodeDeserializer_t)(const char** strp, TreeElement_t* el);
 typedef void (*NodeDestructor_t)(TreeElement_t* el);
+typedef int (*NodeDotSerializer_t)(TreeElement_t* el, FILE* file);
 
-extern NodeSerializer_t tree_element_serialize;
-extern NodeDeserializer_t tree_element_deserialize;
-extern NodeDestructor_t tree_element_destroy;
+extern const NodeSerializer_t tree_element_serialize;
+extern const NodeDeserializer_t tree_element_deserialize;
+extern const NodeDestructor_t tree_element_destroy;
+extern const NodeDotSerializer_t tree_element_dot_serialize;
 
 TreeError tree_new_node(TreeNode** node_ptr, TreeElement_t* elem);
 
@@ -272,9 +274,9 @@ void tree_free(TreeNode** node_ptr) {
 
 static TreeError recursive_tree_dot_dump(TreeNode* node, FILE* file) {
     // Define node
-    fprintf(file, "Node%p [shape=box, style=rounded, label=\"", node);
-    tree_element_serialize(&node->el, file);
-    fprintf(file, "\"];\n");
+    fprintf(file, "Node%p [shape=box, style=rounded, label=< ", node);
+    tree_element_dot_serialize(&node->el, file);
+    fprintf(file, " >];\n");
 
     TreeError err = TREE_OK;
 
