@@ -39,7 +39,14 @@ typedef enum {
     TWS_EMPTY,
 } TreeWalkStatus;
 
+typedef enum {
+    TWD_LEFT,
+    TWD_RIGHT,
+    TWD_QUIT,
+} TreeWalkDirection;
+
 typedef int (*TreeWalkHandler_t)(TreeElement_t* elem, TreeWalkStatus status, size_t depth);
+typedef int (*TreeCustomWalkHandler_t)(TreeElement_t* elem, TreeWalkDirection* direction, size_t depth);
 
 typedef int (*NodeSerializer_t)(TreeElement_t* el, FILE* file);
 typedef int (*NodeDeserializer_t)(const char** strp, TreeElement_t* el);
@@ -66,6 +73,7 @@ TreeError tree_parse(TreeNode** root, const char* str);
 void tree_free(TreeNode** node_ptr);
 
 int tree_walk(TreeNode* root, TreeWalkHandler_t handler);
+int tree_custom_walk(TreeNode* root, TreeWalkHandler_t handler);
 
 int tree_serialize_int(int* num, FILE* file);
 int tree_deserialize_int(const char** strp, int* num);
@@ -337,7 +345,7 @@ static int recursive_tree_walk(TreeNode* node, size_t depth, TreeWalkHandler_t h
     int err = 0;
 
     if (node == NULL) {
-        handler(&node->el, TWS_EMPTY, depth);
+        return handler(NULL, TWS_EMPTY, depth);
     } else {
         handler(&node->el, TWS_PRE, depth);
 
@@ -357,6 +365,38 @@ static int recursive_tree_walk(TreeNode* node, size_t depth, TreeWalkHandler_t h
 
 int tree_walk(TreeNode* root, TreeWalkHandler_t handler) {
     return recursive_tree_walk(root, 0, handler);
+}
+
+static int recursive_custom_walk(TreeNode* node, size_t depth, TreeCustomWalkHandler_t handler) {
+    TreeWalkDirection dir = TWD_QUIT;
+
+    if (node == NULL) {
+        return handler(NULL, &dir, depth);
+    }
+
+    int err = handler(&node->el, &dir, depth);
+    if (err) return err;
+
+    switch (dir) {
+        case TWD_LEFT:
+            return recursive_custom_walk(node->left, depth + 1, handler);
+
+        case TWD_RIGHT:
+            return recursive_custom_walk(node->right, depth + 1, handler);
+
+        case TWD_QUIT:
+            return 0;
+
+        default:
+            $err("[recursive_custom_walk] Invalid value passed for tree walk direction");
+            return 1;
+    }
+
+    return 0;
+}
+
+int tree_custom_walk(TreeNode* root, TreeCustomWalkHandler_t handler) {
+    return recursive_custom_walk(root, 0, handler);
 }
 
 /* Serialize/deserialize functions for int */
