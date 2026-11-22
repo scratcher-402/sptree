@@ -32,6 +32,15 @@ typedef enum {
     TREE_ATTACH_RIGHT,
 } TreeAttachMode;
 
+typedef enum {
+    TWS_PRE,
+    TWS_IN,
+    TWS_POST,
+    TWS_EMPTY,
+} TreeWalkStatus;
+
+typedef int (*TreeWalkHandler_t)(TreeElement_t* elem, TreeWalkStatus status, size_t depth);
+
 typedef int (*NodeSerializer_t)(TreeElement_t* el, FILE* file);
 typedef int (*NodeDeserializer_t)(const char** strp, TreeElement_t* el);
 typedef void (*NodeDestructor_t)(TreeElement_t* el);
@@ -55,6 +64,8 @@ TreeError tree_dot_dump(TreeNode* node);
 TreeError tree_parse(TreeNode** root, const char* str);
 
 void tree_free(TreeNode** node_ptr);
+
+int tree_walk(TreeNode* root, TreeWalkHandler_t handler);
 
 int tree_serialize_int(int* num, FILE* file);
 int tree_deserialize_int(const char** strp, int* num);
@@ -321,6 +332,34 @@ TreeError tree_dot_dump(TreeNode* node) {
 
     return TREE_OK;
 }
+
+static int recursive_tree_walk(TreeNode* node, size_t depth, TreeWalkHandler_t handler) {
+    int err = 0;
+
+    if (node == NULL) {
+        handler(&node->el, TWS_EMPTY, depth);
+    } else {
+        handler(&node->el, TWS_PRE, depth);
+
+        err = recursive_tree_walk(node->left, depth + 1, handler);
+        if (err) return err;
+
+        handler(&node->el, TWS_IN, depth);
+
+        err = recursive_tree_walk(node->right, depth + 1, handler);
+        if (err) return err;
+
+        handler(&node->el, TWS_POST, depth);
+    }
+
+    return 0;
+}
+
+int tree_walk(TreeNode* root, TreeWalkHandler_t handler) {
+    return recursive_tree_walk(root, 0, handler);
+}
+
+/* Serialize/deserialize functions for int */
 
 int tree_serialize_int(int* num, FILE* file) {
     int result = fprintf(file, "%d", *num);

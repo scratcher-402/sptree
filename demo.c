@@ -18,6 +18,12 @@ void handle_error(TreeError err) {
     }
 }
 
+int walk_handler(int* n, TreeWalkStatus status, size_t depth) {
+    if (status == TWS_PRE) printf("value: %d, depth: %zu\n", *n, depth);
+
+    return 0;
+}
+
 TreeNode* new_node(int n) {
     TreeNode* node;
     TreeError err = tree_new_node(&node, &n);
@@ -55,6 +61,8 @@ int main() {
 
     tree_dump(root, stdout);
     putchar('\n');
+
+    tree_walk(root, walk_handler);
 
     err = tree_detach(node3);
     handle_error(err);
