@@ -80,7 +80,7 @@ TreeError tree_parse(TreeNode** root, const char* str);
 void tree_free(TreeNode** node_ptr);
 
 int tree_walk(TreeNode* root, TreeWalkHandler_t handler);
-int tree_custom_walk(TreeNode* root, TreeWalkHandler_t handler);
+int tree_custom_walk(TreeNode* root, TreeCustomWalkHandler_t handler);
 
 int tree_serialize_int(int* num, FILE* file);
 int tree_deserialize_int(const char** strp, int* num);
