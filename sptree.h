@@ -6,6 +6,7 @@ typedef int TreeElement_t;
 #endif
 
 #include <stdio.h>
+#include <stdbool.h>
 #include "lib/spdebug2/spdebug.h"
 
 typedef struct TreeNode {
@@ -61,13 +62,12 @@ extern const NodeDotSerializer_t tree_element_dot_serialize;
 TreeError tree_new_node(TreeNode** node_ptr, TreeElement_t* elem);
 
 TreeError tree_attach(TreeNode* parent, TreeNode* child, TreeAttachMode mode);
-
 TreeError tree_detach(TreeNode* child);
 
+bool tree_leaf(TreeNode* node);
+
 TreeError tree_dump(TreeNode* root, FILE* file);
-
 TreeError tree_dot_dump(TreeNode* node);
-
 TreeError tree_parse(TreeNode** root, const char* str);
 
 void tree_free(TreeNode** node_ptr);
@@ -169,6 +169,10 @@ TreeError tree_detach(TreeNode* child) {
     child->parent = NULL;
 
     return TREE_OK;
+}
+
+bool tree_leaf(TreeNode* node) {
+    return (node->left == NULL && node->right == NULL);
 }
 
 TreeError tree_dump(TreeNode* root, FILE* file) {
