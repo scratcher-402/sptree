@@ -46,8 +46,15 @@ typedef enum {
     TWD_QUIT,
 } TreeWalkDirection;
 
+typedef enum {
+    TNT_LEAF = 0,
+    TNT_LEFT = 1,
+    TNT_RIGHT = 2,
+    TNT_BOTH = 3,
+} TreeNodeType;
+
 typedef int (*TreeWalkHandler_t)(TreeElement_t* elem, TreeWalkStatus status, size_t depth);
-typedef int (*TreeCustomWalkHandler_t)(TreeElement_t* elem, TreeWalkDirection* direction, size_t depth);
+typedef int (*TreeCustomWalkHandler_t)(TreeElement_t* elem, TreeWalkDirection* direction, TreeNodeType type, size_t depth);
 
 typedef int (*NodeSerializer_t)(TreeElement_t* el, FILE* file);
 typedef int (*NodeDeserializer_t)(const char** strp, TreeElement_t* el);
@@ -371,14 +378,21 @@ int tree_walk(TreeNode* root, TreeWalkHandler_t handler) {
     return recursive_tree_walk(root, 0, handler);
 }
 
+static TreeNodeType get_node_type(TreeNode* node) {
+    return (TreeNodeType)(
+        (node->left != NULL) | ((node->right != NULL) << 1)
+            );
+}
+
 static int recursive_custom_walk(TreeNode* node, size_t depth, TreeCustomWalkHandler_t handler) {
     TreeWalkDirection dir = TWD_QUIT;
+    TreeNodeType type = get_node_type(node);
 
     if (node == NULL) {
-        return handler(NULL, &dir, depth);
+        return handler(NULL, &dir, type, depth);
     }
 
-    int err = handler(&node->el, &dir, depth);
+    int err = handler(&node->el, &dir, type, depth);
     if (err) return err;
 
     switch (dir) {
