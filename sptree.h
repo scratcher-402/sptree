@@ -92,7 +92,6 @@ int tree_deserialize_int(const char** strp, int* num);
 #include <string.h>
 #include <ctype.h>
 #include <limits.h>
-#include "sptree.h"
 
 TreeError tree_new_node(TreeNode** node_ptr, TreeElement_t* el) {
     assert(node_ptr != NULL);
@@ -104,7 +103,7 @@ TreeError tree_new_node(TreeNode** node_ptr, TreeElement_t* el) {
         return TREE_ERR_ALLOC;
     }
 
-    memcpy(&node->el, el, sizeof(TreeElement_t));
+    if (el != NULL) memcpy(&node->el, el, sizeof(TreeElement_t));
     *node_ptr = node;
 
     return TREE_OK;
@@ -350,6 +349,13 @@ TreeError tree_dot_dump(TreeNode* node) {
     fclose(file);
 
     return TREE_OK;
+}
+
+size_t tree_get_depth(TreeNode* root) {
+    if (root == 0) return 0;
+
+    return  tree_get_depth(root->left) + \
+            tree_get_depth(root->right);
 }
 
 static int recursive_tree_walk(TreeNode* node, size_t depth, TreeWalkHandler_t handler) {
